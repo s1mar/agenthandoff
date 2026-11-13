@@ -1,0 +1,44 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]   # macos-latest is Apple Silicon
+        python: ["3.10", "3.13"]   # oldest supported and newest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Install package
+        run: python -m pip install .
+      - name: CLI smoke (not set up, must fail fast with exit 2)
+        shell: bash
+        run: |
+          set -o pipefail
+          set +e
+          agenthandoff digest README.md -q "what is this" ; code=$?
+          set -e
+          test "$code" -eq 2
+      - name: CLI smoke (code-only read, no model, must succeed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/smoke"; mkdir -p "$d"
+          for i in $(seq 1 300); do echo "2026-01-01 00:00:01 INFO tick n=$i"; done > "$d/app.log"
+          echo "2026-01-01 00:00:02 ERROR disk full" >> "$d/app.log"
+          { echo "id,label"; for i in $(seq 1 50); do echo "$i,yes"; done; } > "$d/data.csv"
+          { for i in $(seq 1 30); do echo "{\"step\": $i, \"ok\": true}"; done; } > "$d/run.jsonl"
+          agenthandoff read "$d/app.log" -q "any errors?" | tee "$d/1"; grep -q "ROUTE: profile" "$d/1"; grep -q "disk full" "$d/1"
+          agenthandoff read "$d/data.csv" | tee "$d/2"; grep -q "ROUTE: shape" "$d/2"; grep -q "50 rows" "$d/2"
+          agenthandoff read "$d/run.jsonl" | tee "$d/3"; grep -q "ROUTE: shape" "$d/3"
+          agenthandoff read src/agenthandoff --include "*.py" | tee "$d/4"; grep -q "ROUTE: outline" "$d/4"
+  # Wiring test against a real tiny model is added once the tiny-model install step is
+  # measured on both runners; a CI speed number is never a speed claim.

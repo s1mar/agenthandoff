@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agenthandoff"
+version = "0.1.0"
+description = "Quick overviews of logs, data files and code folders, by plain code, with real line numbers. Optional local-model digest for prose."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["logs", "csv", "jsonl", "mcp", "code-outline", "coding-agent", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development",
+    "Topic :: System :: Logging",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/s1mar/agenthandoff"
+Issues = "https://github.com/s1mar/agenthandoff/issues"
+
+[project.scripts]
+agenthandoff = "agenthandoff.cli:main"
+agenthandoff-mcp = "agenthandoff.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
